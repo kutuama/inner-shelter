@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+    <input type="text" id="input" placeholder="Enter text">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        const ws = new WebSocket('ws://127.0.0.1:3030/ws');
+        let clientId = '';
+
+        ws.onopen = () => {
+            // Assign a random client ID upon connection
+            clientId = Math.random().toString(36).substr(2, 9);
+            console.log("Connected with Client ID: " + clientId);
+        };
+
+        ws.onmessage = (event) => {
+            console.log("Received message from server: " + event.data);
+        };
+
+        function sendMessage() {
+            const input = document.getElementById("input").value;
+            console.log(`Client ${clientId} sent: ${input}`);
+            ws.send(`${clientId}: ${input}`);
+        }
+    </script>
+</body>
+</html>
