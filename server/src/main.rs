@@ -1,37 +1,36 @@
-mod config;
+use actix_web::{web, App, HttpServer};
+use actix_cors::Cors;
+use scylla::SessionBuilder;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
 mod auth;
-mod handlers;
-mod services;
-mod components;
 
-use warp::Filter;
-use tokio::sync::broadcast;
-use handlers::websocket::handle_socket;
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    // Set up the Cassandra client
+    let cassandra_uri = "127.0.0.1:9042";
+    let session = SessionBuilder::new()
+        .known_node(cassandra_uri)
+        .build()
+        .await
+        .expect("Cassandra connection failed");
+    let session = Arc::new(Mutex::new(session));
 
-#[tokio::main]
-async fn main() {
-    let redis_client = config::get_redis_client();
-    let (tx, _rx) = broadcast::channel(16);
-    let jwt_secret: &[u8] = b"your_secret_key";
-
-    let filter = warp::path("ws")
-    .and(warp::ws())
-    .and(warp::cookie::optional("jwt"))
-    .and_then(move |ws: warp::ws::Ws, jwt: Option<String>| {
-        let tx = tx.clone();
-        let redis_client = redis_client.clone();
-        let jwt_secret = jwt_secret; // Removed `.clone()` here
-        async move {
-            if let Some(token) = jwt {
-                match auth::validate_jwt(&token, &jwt_secret) {
-                    Ok(user_id) => Ok(ws.on_upgrade(move |socket| handle_socket(socket, tx, redis_client, user_id))),
-                    Err(_) => Err(warp::reject::custom(auth::Unauthorized)),
-                }
-            } else {
-                Err(warp::reject::custom(auth::Unauthorized))
-            }
-        }
-    });
-
-    warp::serve(filter).run(([127, 0, 0, 1], 3030)).await;
+    // Define the HTTP server and routes
+    HttpServer::new(move || {
+        App::new()
+            .wrap(
+                Cors::default()
+                    .allowed_origin("http://innershelter.org:8081") // Allow all origins (for development), restrict in production
+                    .allow_any_method()  // Allow all HTTP methods
+                    .allow_any_header()  // Allow all headers like Content-Type
+                    .supports_credentials() // Allow credentials like cookies
+            )
+            .app_data(web::Data::new(session.clone()))
+            .service(web::scope("/auth").configure(auth::init_routes))  // Configures the auth routes
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }

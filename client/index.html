@@ -1,28 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-<body>
-    <input type="text" id="input" placeholder="Enter text">
-    <button onclick="sendMessage()">Send</button>
-
-    <script>
-        const ws = new WebSocket('ws://127.0.0.1:3030/ws');
-        let clientId = '';
-
-        ws.onopen = () => {
-            // Assign a random client ID upon connection
-            clientId = Math.random().toString(36).substr(2, 9);
-            console.log("Connected with Client ID: " + clientId);
-        };
-
-        ws.onmessage = (event) => {
-            console.log("Received message from server: " + event.data);
-        };
-
-        function sendMessage() {
-            const input = document.getElementById("input").value;
-            console.log(`Client ${clientId} sent: ${input}`);
-            ws.send(`${clientId}: ${input}`);
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inner Shelter Client</title>
+    <style>
+        .tab-menu {
+            margin-bottom: 20px;
         }
-    </script>
-</body>
+    
+        .tab-menu button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+    
+        .tab-content {
+            margin-top: 20px;
+        }
+    </style>    
+</head>
+<body></body>
 </html>

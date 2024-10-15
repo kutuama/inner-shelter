@@ -1,0 +1,11 @@
+/Users/aries/work/kutuama/inner-shelter/client/target/debug/deps/libmanyhow-61a19e34232cbc19.rmeta: /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/lib.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/span_ranged.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/macro_rules.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/error.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/parse_to_tokens.rs
+
+/Users/aries/work/kutuama/inner-shelter/client/target/debug/deps/libmanyhow-61a19e34232cbc19.rlib: /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/lib.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/span_ranged.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/macro_rules.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/error.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/parse_to_tokens.rs
+
+/Users/aries/work/kutuama/inner-shelter/client/target/debug/deps/manyhow-61a19e34232cbc19.d: /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/lib.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/span_ranged.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/macro_rules.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/error.rs /Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/parse_to_tokens.rs
+
+/Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/lib.rs:
+/Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/span_ranged.rs:
+/Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/macro_rules.rs:
+/Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/error.rs:
+/Users/aries/.cargo/registry/src/index.crates.io-6f17d22bba15001f/manyhow-0.10.4/src/parse_to_tokens.rs:

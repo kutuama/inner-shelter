@@ -1,0 +1,11 @@
+[package]
+name = "inner-shelter-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+leptos = { version = "0.6.15", features = ["csr"] }
+gloo-net = "0.6.0"
+wasm-bindgen-futures = "0.4.45"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
