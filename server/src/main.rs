@@ -22,7 +22,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(
                 Cors::default()
-                    .allowed_origin("http://innershelter.org:8081") // Allow all origins (for development), restrict in production
+                    .allowed_origin("http://innershelter.org:8081")
                     .allow_any_method()  // Allow all HTTP methods
                     .allow_any_header()  // Allow all headers like Content-Type
                     .supports_credentials() // Allow credentials like cookies

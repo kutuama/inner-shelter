@@ -7,6 +7,7 @@ use tokio::sync::Mutex;
 use std::sync::Arc;
 use chrono::{Utc, Duration};
 use futures::TryStreamExt;
+use actix_web::cookie::time::OffsetDateTime;
 
 #[derive(Serialize, Deserialize)]
 struct Claims {
@@ -50,8 +51,8 @@ async fn login(
         let stored_password = row.0;
 
         if stored_password == password {
-            // Generate JWT token
-            let expiration = Utc::now() + Duration::hours(24); // Token expires in 24 hours
+            // Generate JWT token with 1-hour expiration
+            let expiration = Utc::now() + Duration::hours(1);
             let claims = Claims {
                 sub: username,
                 exp: expiration.timestamp() as usize,
@@ -64,16 +65,17 @@ async fn login(
             )
             .unwrap();
 
-            // Set the JWT token as an HTTP-only cookie
-            let cookie = Cookie::build("jwt", token)
-                .http_only(true) // Make the cookie http-only
-                .secure(false)    // Disable secure for HTTP (development only)
-                .same_site(actix_web::cookie::SameSite::Lax)
-                .path("/")       // Set the path where the cookie is accessible
+            let expiration_time = OffsetDateTime::from_unix_timestamp(expiration.timestamp()).unwrap();
+            let cookie = Cookie::build("access_token", token)
+                .http_only(true)
+                .secure(false) // TODO: prod env: true
+                .same_site(actix_web::cookie::SameSite::Lax) // TODO: prod env: None
+                .path("/")
+                .expires(expiration_time)
                 .finish();
 
             return HttpResponse::Ok()
-                .cookie(cookie) // Set the cookie in the response
+                .cookie(cookie)
                 .body("Login successful, token set in httpOnly cookie");
         }
     }
