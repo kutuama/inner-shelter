@@ -1,3 +1,5 @@
 /**/target
 /client/dist
 /**/public
+.DS_Store
+repopack-output.txt

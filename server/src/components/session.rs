@@ -1,5 +1,5 @@
-#[allow(dead_code)]
-pub struct SessionComponent {
-    pub user_id: String,
-    pub session_start: chrono::DateTime<chrono::Utc>,
+use redis::Client;
+
+pub fn get_redis_client() -> Client {
+    redis::Client::open("redis://127.0.0.1/").unwrap()
 }

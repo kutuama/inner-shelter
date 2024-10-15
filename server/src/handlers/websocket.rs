@@ -1,33 +1,52 @@
-use warp::ws::WebSocket;
-use tokio::sync::broadcast;
-use futures_util::{StreamExt, SinkExt};
+use actix_web::{HttpRequest, HttpResponse, Responder, web};
+use actix_web::web::Payload;
 use redis::AsyncCommands;
-use redis::aio::Connection;
+use redis::Client as RedisClient;
+use tokio::sync::broadcast;
+use futures_util::StreamExt;
 use uuid::Uuid;
+use crate::auth::jwt::validate_jwt;
 
-pub async fn handle_socket(ws: WebSocket, tx: broadcast::Sender<String>, redis_client: redis::Client, user_id: String) {
-    let (mut ws_tx, mut ws_rx) = ws.split();
-    let mut redis_con: Connection = redis_client.get_async_connection().await.unwrap();
-    let mut rx = tx.subscribe();
+pub async fn websocket_route(
+    req: HttpRequest,
+    stream: Payload,
+    redis_client: web::Data<RedisClient>,
+    tx: web::Data<broadcast::Sender<String>>,
+) -> impl Responder {
+    let query_string = req.query_string();
+    let query_params: std::collections::HashMap<String, String> = serde_urlencoded::from_str(query_string).unwrap();
 
-    let client_id = Uuid::new_v4().to_string();
-
-    // Broadcast incoming text to all clients
-    tokio::spawn(async move {
-        while let Ok(msg) = rx.recv().await {
-            if ws_tx.send(warp::ws::Message::text(msg)).await.is_err() {
-                break;
-            }
+    if let Some(token) = query_params.get("token").map(String::as_str) {
+        match validate_jwt(&token, b"your_secret_key") {
+            Ok(user_id) => {
+                match handle_socket(stream, tx, redis_client, user_id).await {
+                    Ok(_) => HttpResponse::Ok().finish(),
+                    Err(_) => HttpResponse::InternalServerError().finish(),
+                }
+            },
+            Err(_) => HttpResponse::Unauthorized().body("Invalid Token"),
         }
-    });
+    } else {
+        HttpResponse::BadRequest().body("Missing JWT token")
+    }
+}
 
-    while let Some(Ok(msg)) = ws_rx.next().await {
-        if msg.is_text() {
-            let text = msg.to_str().unwrap();
-            let _: () = redis_con.set(&client_id, text).await.unwrap();
+async fn handle_socket(
+    mut stream: Payload,
+    tx: web::Data<broadcast::Sender<String>>,
+    redis_client: web::Data<RedisClient>,
+    user_id: String,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client_id = Uuid::new_v4().to_string();
+    let mut redis_con = redis_client.get_multiplexed_async_connection().await?;
 
-            // Broadcast the message to all other clients
+    // WebSocket message handling
+    while let Some(Ok(msg)) = stream.next().await {
+        if let Ok(text) = std::str::from_utf8(&msg) {
+            let _: () = redis_con.set(&client_id, text).await?;
             tx.send(format!("{}: {}", user_id, text)).unwrap();
         }
     }
+
+    Ok(())
 }
