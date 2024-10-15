@@ -1,1 +1,0 @@
-/Users/aries/work/kutuama/inner-shelter/client/target/wasm32-unknown-unknown/debug/inner-shelter-client.wasm: /Users/aries/work/kutuama/inner-shelter/client/src/create_account.rs /Users/aries/work/kutuama/inner-shelter/client/src/login.rs /Users/aries/work/kutuama/inner-shelter/client/src/main.rs
