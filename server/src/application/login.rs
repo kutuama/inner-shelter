@@ -2,7 +2,6 @@ use actix_web::{post, web, HttpResponse, Responder};
 use crate::domain::auth::LoginData;
 use crate::infrastructure::authentication;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use futures::TryStreamExt;
 use crate::config::Config;
 use crate::errors::AppError;
@@ -11,13 +10,11 @@ use scylla::Session;
 #[post("/login")]
 pub async fn login(
     login_data: web::Json<LoginData>,
-    session: web::Data<Arc<Mutex<Session>>>,
+    session: web::Data<Arc<Session>>,
     config: web::Data<Config>,
-) -> Result<impl Responder, AppError> { // Change return type
+) -> Result<impl Responder, AppError> {
     let username = login_data.username.clone();
     let password = login_data.password.clone();
-
-    let session = session.lock().await;
 
     let query = "SELECT password FROM inner_shelter.users WHERE username = ?";
     let prepared = session.prepare(query).await
