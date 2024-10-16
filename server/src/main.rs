@@ -5,7 +5,6 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 mod auth;
-mod handlers;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -32,7 +31,6 @@ async fn main() -> std::io::Result<()> {
                 .configure(auth::login::init_routes)
                 .configure(auth::register::init_routes),
             )
-            .route("/ws", web::get().to(handlers::websocket::websocket_route))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
