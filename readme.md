@@ -4,7 +4,7 @@
 - Install [rust](https://www.rust-lang.org/tools/install)
 - Install [trunk](https://trunkrs.dev/) for the client
 - Install [cassandra](https://formulae.brew.sh/formula/cassandra)
-- Create the table
+- Run `cqlsh` and create the table
 ```
 CREATE KEYSPACE IF NOT EXISTS inner_shelter WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
