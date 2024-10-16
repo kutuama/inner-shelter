@@ -37,7 +37,7 @@ pub fn LoginPage() -> impl IntoView {
             opts.set_credentials(RequestCredentials::Include); // Use set_credentials instead of credentials
 
             let request = web_sys::Request::new_with_str_and_init(
-                "http://innershelter.org:8080/auth/login",
+                "http://innershelter.org:8080/login",
                 &opts,
             )
             .unwrap();

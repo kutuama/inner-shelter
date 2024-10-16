@@ -23,7 +23,7 @@ pub fn RegisterPage() -> impl IntoView {
                 password: password_value,
             };
 
-            match Request::post("http://innershelter.org:8080/auth/create")
+            match Request::post("http://innershelter.org:8080/register")
                 .json(&account_data)
                 .unwrap()
                 .send()
