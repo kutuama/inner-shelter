@@ -1,9 +1,11 @@
 use leptos::*;
 use leptos::html::Div;
 use web_sys::{console, KeyboardEvent};
+use crate::application::websocket_service::WebSocketService;
+use serde_json::Value;
 
 #[component]
-pub fn GamePage() -> impl IntoView {
+pub fn GamePage(websocket_service: WebSocketService) -> impl IntoView {
     // Define the grid size
     const GRID_SIZE: usize = 10;
 
@@ -24,24 +26,55 @@ pub fn GamePage() -> impl IntoView {
     });
 
     // Handle keydown events to move the player
+    let ws_service_clone = websocket_service.clone();
     let on_keydown = move |e: KeyboardEvent| {
         let key = e.key();
-        match key.as_str() {
-            "ArrowUp" => {
-                player_y.update(|y| if *y > 1 { *y -= 1 });
+        let (dx, dy) = match key.as_str() {
+            "ArrowUp" => (0, -1),
+            "ArrowDown" => (0, 1),
+            "ArrowLeft" => (-1, 0),
+            "ArrowRight" => (1, 0),
+            _ => (0, 0),
+        };
+
+        if dx != 0 || dy != 0 {
+            // Send the movement command to the server
+            let message = serde_json::json!({
+                "action": "move",
+                "dx": dx,
+                "dy": dy,
+            });
+            if let Err(err) = ws_service_clone.send(&message.to_string()) {
+                console::error_1(&format!("Failed to send message: {}", err).into());
             }
-            "ArrowDown" => {
-                player_y.update(|y| if *y < GRID_SIZE { *y += 1 });
-            }
-            "ArrowLeft" => {
-                player_x.update(|x| if *x > 1 { *x -= 1 });
-            }
-            "ArrowRight" => {
-                player_x.update(|x| if *x < GRID_SIZE { *x += 1 });
-            }
-            _ => {}
         }
     };
+
+    // Handle incoming messages from the server
+    let ws_service_clone2 = websocket_service.clone();
+    let player_x_clone = player_x.clone();
+    let player_y_clone = player_y.clone();
+
+    create_effect(move |_| {
+        ws_service_clone2.set_on_message(move |message| {
+            // Parse the message and update the game state
+            if let Ok(value) = serde_json::from_str::<Value>(&message) {
+                if let Some(action) = value.get("action").and_then(|v| v.as_str()) {
+                    match action {
+                        "update_position" => {
+                            if let Some(x) = value.get("x").and_then(|v| v.as_u64()) {
+                                player_x_clone.set(x as usize);
+                            }
+                            if let Some(y) = value.get("y").and_then(|v| v.as_u64()) {
+                                player_y_clone.set(y as usize);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        });
+    });
 
     // Generate the grid
     let grid = move || {

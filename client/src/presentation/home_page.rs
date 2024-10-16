@@ -2,10 +2,11 @@ use leptos::*;
 use leptos::html::Div;
 use crate::presentation::login::LoginPage;
 use crate::presentation::register::RegisterPage;
+use crate::presentation::game::GamePage; // Add this import
 use crate::application::auth_service::AuthService;
 use crate::application::websocket_service::WebSocketService;
 use crate::domain::models::User;
-use web_sys::{console, KeyboardEvent};
+use web_sys::console;
 
 #[component]
 pub fn HomePage(auth_service: AuthService) -> impl IntoView {
@@ -59,26 +60,8 @@ pub fn HomePage(auth_service: AuthService) -> impl IntoView {
         }
     });
 
-    // Handle keydown events to send movement commands
-    let on_keydown = move |e: KeyboardEvent| {
-        if let Some(ws_service) = websocket_service.get() {
-            if let Some(dir) = match e.key().as_str() {
-                "ArrowUp" => Some("up"),
-                "ArrowDown" => Some("down"),
-                "ArrowLeft" => Some("left"),
-                "ArrowRight" => Some("right"),
-                _ => None,
-            } {
-                let message = serde_json::json!({
-                    "action": "move",
-                    "direction": dir,
-                });
-                if let Err(err) = ws_service.send(&message.to_string()) {
-                    console::error_1(&format!("Failed to send message: {}", err).into());
-                }
-            }
-        }
-    };
+    // Remove the global keydown handler from HomePage
+    // Keyboard events will be handled in GamePage
 
     let select_login = move |_| active_tab.set("login".to_string());
     let select_create_account = move |_| active_tab.set("create".to_string());
@@ -88,17 +71,23 @@ pub fn HomePage(auth_service: AuthService) -> impl IntoView {
     let active_tab_signal = active_tab.clone();
 
     view! {
-        <div node_ref=container_ref on:keydown=on_keydown tabindex="0">
+        <div node_ref=container_ref tabindex="0">
             <h1>"Welcome to Inner Shelter"</h1>
             {if user.get().is_some() {
-                // User is logged in, display the game or main content
-                view! {
-                    <div>
-                        <p>{format!("Logged in as {}", user.get().unwrap().username)}</p>
-                        // Add your game content or main application here
-                        <p>"Use the arrow keys to move your character."</p>
-                    </div>
-                }.into_view()
+                if let Some(ws_service) = websocket_service.get() {
+                    // User is logged in, display the game page
+                    view! {
+                        <div>
+                            <p>{format!("Logged in as {}", user.get().unwrap().username)}</p>
+                            <GamePage websocket_service=ws_service.clone() />
+                        </div>
+                    }.into_view()
+                } else {
+                    // WebSocketService not available yet
+                    view! {
+                        <p>"Connecting to game server..."</p>
+                    }.into_view()
+                }
             } else {
                 // User is not logged in, display login/create account forms
                 view! {
