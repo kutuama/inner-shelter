@@ -1,0 +1,7 @@
+{
+    "scripts": {
+      "dev": "cd client && trunk serve --port 8081",
+      "build": "cd client && trunk build"
+    }
+  }
+  

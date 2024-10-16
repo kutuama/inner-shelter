@@ -18,8 +18,7 @@ impl LoginData {
     }
 }
 
-
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RegisterData {
     pub username: String,
     pub password: String,

@@ -583,12 +583,16 @@ dependencies = [
 name = "client"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "gloo-net",
+ "gloo-utils",
  "leptos",
  "serde",
  "serde_json",
  "shared",
+ "wasm-bindgen",
  "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]

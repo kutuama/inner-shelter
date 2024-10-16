@@ -1,5 +1,5 @@
-/**/target
-/client/dist
-/**/public
+target
+dist
+public
 .DS_Store
 repopack-output.txt
