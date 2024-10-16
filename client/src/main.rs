@@ -1,9 +1,9 @@
 use leptos::*;
 
-mod create_account;
+mod register;
 mod login;
 
-use create_account::CreateAccountPage;
+use register::RegisterPage;
 use login::LoginPage;
 
 #[component]
@@ -30,7 +30,7 @@ fn HomePage() -> impl IntoView {
             <div class="tab-content">
                 {move || match active_tab.get().as_str() {
                     "login" => view! { <LoginPage /> }.into_view(),
-                    "create" => view! { <CreateAccountPage /> }.into_view(),
+                    "create" => view! { <RegisterPage /> }.into_view(),
                     _ => view! { <LoginPage /> }.into_view(), // Default case
                 }}
             </div>

@@ -3,13 +3,13 @@ use serde::Serialize;
 use gloo_net::http::Request;
 
 #[derive(Serialize)]
-struct CreateAccountData {
+struct RegisterData {
     username: String,
     password: String,
 }
 
 #[component]
-pub fn CreateAccountPage() -> impl IntoView {
+pub fn RegisterPage() -> impl IntoView {
     let username = create_rw_signal(String::new());
     let password = create_rw_signal(String::new());
 
@@ -18,7 +18,7 @@ pub fn CreateAccountPage() -> impl IntoView {
         let password_value = password.get().clone();
 
         spawn_local(async move {
-            let account_data = CreateAccountData {
+            let account_data = RegisterData {
                 username: username_value,
                 password: password_value,
             };

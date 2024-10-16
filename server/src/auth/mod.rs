@@ -1,3 +1,3 @@
 pub mod jwt;
-pub mod create;
+pub mod register;
 pub mod login;

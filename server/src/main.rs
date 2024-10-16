@@ -30,7 +30,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/auth")
                 .configure(auth::login::init_routes)
-                .configure(auth::create::init_routes),
+                .configure(auth::register::init_routes),
             )
             .route("/ws", web::get().to(handlers::websocket::websocket_route))
     })

@@ -12,8 +12,8 @@ pub struct RegisterData {
     pub password: String,
 }
 
-#[post("/create")]
-pub async fn create_user(
+#[post("/register")]
+pub async fn register(
     register_data: web::Json<RegisterData>,
     session: web::Data<Arc<Mutex<Session>>>,
 ) -> impl Responder {
@@ -55,5 +55,5 @@ pub async fn create_user(
 }
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(create_user);
+    cfg.service(register);
 }
