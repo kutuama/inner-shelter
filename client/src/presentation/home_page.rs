@@ -2,7 +2,7 @@ use leptos::*;
 use leptos::html::Div;
 use crate::presentation::login::LoginPage;
 use crate::presentation::register::RegisterPage;
-use crate::presentation::game::GamePage; // Add this import
+use crate::presentation::game::GamePage;
 use crate::application::auth_service::AuthService;
 use crate::application::websocket_service::WebSocketService;
 use crate::domain::models::User;
@@ -28,7 +28,10 @@ pub fn HomePage(auth_service: AuthService) -> impl IntoView {
 
     // Establish WebSocket connection when the user logs in
     create_effect(move |_| {
-        if let Some(_user) = user.get() {
+        if let Some(user_data) = user.get() {
+            // Log the token to get rid of the warning
+            console::log_1(&format!("User token: {:?}", user_data.token).into());
+
             // User is logged in, connect to WebSocket
             let ws_url = "ws://innershelter.org:8080/ws";
             match WebSocketService::connect(ws_url) {
@@ -59,9 +62,6 @@ pub fn HomePage(auth_service: AuthService) -> impl IntoView {
             }
         }
     });
-
-    // Remove the global keydown handler from HomePage
-    // Keyboard events will be handled in GamePage
 
     let select_login = move |_| active_tab.set("login".to_string());
     let select_create_account = move |_| active_tab.set("create".to_string());
