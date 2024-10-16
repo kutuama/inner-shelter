@@ -11,6 +11,9 @@ pub async fn register(
     register_data: web::Json<RegisterData>,
     session: web::Data<Arc<Session>>,
 ) -> Result<impl Responder, AppError> {
+    // Validate registration data
+    register_data.validate().map_err(|e| AppError::ValidationError(e))?;
+
     let username = register_data.username.clone();
     let password = authentication::hash_password(&register_data.password)
         .map_err(|e| AppError::AuthError(e.to_string()))?;

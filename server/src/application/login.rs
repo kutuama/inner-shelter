@@ -13,6 +13,9 @@ pub async fn login(
     session: web::Data<Arc<Session>>,
     config: web::Data<Config>,
 ) -> Result<impl Responder, AppError> {
+    // Validate login data
+    login_data.validate().map_err(|e| AppError::ValidationError(e))?;
+
     let username = login_data.username.clone();
     let password = login_data.password.clone();
 
