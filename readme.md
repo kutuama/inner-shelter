@@ -18,3 +18,7 @@ CREATE TABLE IF NOT EXISTS inner_shelter.users (
 - Run `cargo run -p server`
 - Run `trunk serve --port 8081`
 - Open `http://innershelter.org:8081/` from your browser
+
+# Tools
+- Get [repopack](https://github.com/yamadashy/repopack)
+- Run `repopack --ignore "dist,public,target,Cargo.lock,readme.md,LICENSE"`
