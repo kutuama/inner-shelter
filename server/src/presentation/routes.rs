@@ -1,17 +1,20 @@
 use actix_web::{web, App, HttpServer};
 use actix_cors::Cors;
-use crate::infrastructure::db;
+use crate::infrastructure::db::get_db_session;
 use crate::application::{login, register};
 use crate::config::Config;
+use crate::errors::AppError;
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(login::login)
         .service(register::register);
 }
 
-pub async fn start_server() -> std::io::Result<()> {
+pub async fn start_server() -> Result<(), AppError> {
     let config = Config::new();
-    let db_session = db::get_db_session(&config.db_url).await;
+
+    // Attempt to get the database session
+    let db_session = get_db_session(&config.db_url).await?;
 
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -26,7 +29,9 @@ pub async fn start_server() -> std::io::Result<()> {
             .app_data(web::Data::new(db_session.clone()))
             .configure(init_routes)
     })
-    .bind("127.0.0.1:8080")?
+    .bind("127.0.0.1:8080")
+    .map_err(|_e| AppError::InternalError)?
     .run()
     .await
+    .map_err(|_e| AppError::InternalError)
 }
