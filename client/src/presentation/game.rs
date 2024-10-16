@@ -7,24 +7,24 @@ use std::collections::HashMap;
 use serde::Deserialize;
 
 // Define the grid size at the module level
-const GRID_SIZE: usize = 10;
+const GRID_SIZE: i32 = 10;
 
 #[derive(Clone, Debug, Deserialize)]
 struct PositionUpdate {
     _action: String,
     username: String,
-    x: usize,
-    y: usize,
+    x: i32,
+    y: i32,
 }
 
 #[component]
 pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl IntoView {
     // Create signals for the player's position
-    let player_x = create_rw_signal(1usize);
-    let player_y = create_rw_signal(1usize);
+    let player_x = create_rw_signal(1i32);
+    let player_y = create_rw_signal(1i32);
 
     // Create a signal to track other players' positions
-    let other_players = create_rw_signal(HashMap::<String, (usize, usize)>::new());
+    let other_players = create_rw_signal(HashMap::<String, (i32, i32)>::new());
 
     // Reference to the game container for focusing
     let game_container_ref = create_node_ref::<Div>();
@@ -90,6 +90,8 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
                                     players.insert(pos_update.username.clone(), (pos_update.x, pos_update.y));
                                 });
                             }
+                        } else {
+                            console::error_1(&"Failed to deserialize PositionUpdate".into());
                         }
                     }
                     _ => {}
@@ -100,23 +102,24 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
 
     // Generate the grid
     let grid = move || {
+        let player_x = player_x.get();
+        let player_y = player_y.get();
+        let other_players = other_players.get();
+
         let mut rows = vec![];
 
         for row in 1..=GRID_SIZE {
             let mut cells = vec![];
             for col in 1..=GRID_SIZE {
-                let is_player = move || player_x.get() == col && player_y.get() == row;
-                let is_other_player = move || {
-                    other_players.get().values().any(|&(x, y)| x == col && y == row)
-                };
-                let cell_class = move || {
-                    if is_player() {
-                        "cell player"
-                    } else if is_other_player() {
-                        "cell other-player"
-                    } else {
-                        "cell"
-                    }
+                let is_player = player_x == col && player_y == row;
+                let is_other_player = other_players.values().any(|&(x, y)| x == col && y == row);
+
+                let cell_class = if is_player {
+                    "cell player"
+                } else if is_other_player {
+                    "cell other-player"
+                } else {
+                    "cell"
                 };
 
                 cells.push(view! {
