@@ -73,7 +73,7 @@ pub fn HomePage(auth_service: AuthService) -> impl IntoView {
     view! {
         <div node_ref=container_ref tabindex="0">
             <h1>"Welcome to Inner Shelter"</h1>
-            {if user.get().is_some() {
+            {move || if user.get().is_some() {
                 if let Some(ws_service) = websocket_service.get() {
                     // User is logged in, display the game page
                     view! {
@@ -93,8 +93,18 @@ pub fn HomePage(auth_service: AuthService) -> impl IntoView {
                 view! {
                     <div>
                         <div class="tab-menu">
-                            <button on:click=select_login>"Login"</button>
-                            <button on:click=select_create_account>"Create Account"</button>
+                            <button
+                                class=move || if active_tab_signal.get() == "login" { "active" } else { "" }
+                                on:click=select_login
+                            >
+                                "Login"
+                            </button>
+                            <button
+                                class=move || if active_tab_signal.get() == "create" { "active" } else { "" }
+                                on:click=select_create_account
+                            >
+                                "Create Account"
+                            </button>
                         </div>
 
                         <div class="tab-content">

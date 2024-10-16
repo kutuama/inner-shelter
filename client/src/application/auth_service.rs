@@ -22,7 +22,10 @@ impl AuthService {
                     username,
                     token: Some(token),
                 };
-                user_signal.set(Some(user));
+                // Update the user_signal
+                leptos::spawn_local(async move {
+                    user_signal.set(Some(user));
+                });
             }
             Err(err) => {
                 web_sys::console::error_1(&format!("Login failed: {}", err).into());
