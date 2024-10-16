@@ -1,4 +1,5 @@
 use actix_web::{post, web, HttpResponse, Responder};
+use actix_web::cookie::{Cookie, SameSite, time::Duration};
 use shared::api::auth::LoginData;
 use crate::infrastructure::authentication;
 use crate::domain::user_repository::UserRepository;
@@ -28,7 +29,17 @@ pub async fn login(
 
     if is_valid {
         let token = authentication::generate_jwt(&username, config.jwt_secret.as_bytes())?;
-        Ok(HttpResponse::Ok().body(format!("Login successful, token: {}", token)))
+        let token_clone = token.clone();
+        let cookie = Cookie::build("access_token", token)
+            .http_only(true)
+            .secure(false)
+            .same_site(SameSite::Lax)
+            .path("/")
+            .max_age(Duration::seconds(3600))
+            .finish();
+        Ok(HttpResponse::Ok()
+        .cookie(cookie)
+        .body(format!("Login successful, token: {}", token_clone)))
     } else {
         Err(AppError::AuthError("Invalid credentials".into()))
     }
