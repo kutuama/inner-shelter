@@ -5,10 +5,12 @@ use crate::infrastructure::repository::create_user_repository;
 use crate::application::{login, register};
 use crate::config::Config;
 use crate::errors::AppError;
+use crate::presentation::websocket::ws_handler;
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(login::login)
-        .service(register::register);
+        .service(register::register)
+        .route("/ws", web::get().to(ws_handler));
 }
 
 pub async fn start_server() -> Result<(), AppError> {
