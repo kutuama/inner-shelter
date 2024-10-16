@@ -1,3 +1,5 @@
+Note that the client side code preferences are temporary, gonna replace it with godot or bevy at some point.
+
 # Requirements
 
 - Add `127.0.0.1   innershelter.org` to `etc/hosts` file
