@@ -4,11 +4,11 @@ use web_sys::{console, KeyboardEvent};
 use crate::application::websocket_service::WebSocketService;
 use serde_json::Value;
 
+// Define the grid size at the module level
+const GRID_SIZE: usize = 10;
+
 #[component]
 pub fn GamePage(websocket_service: WebSocketService) -> impl IntoView {
-    // Define the grid size
-    const GRID_SIZE: usize = 10;
-
     // Create signals for the player's position
     let player_x = create_rw_signal(1usize);
     let player_y = create_rw_signal(1usize);
@@ -83,10 +83,12 @@ pub fn GamePage(websocket_service: WebSocketService) -> impl IntoView {
         for row in 1..=GRID_SIZE {
             let mut cells = vec![];
             for col in 1..=GRID_SIZE {
-                let is_player = player_x.get() == col && player_y.get() == row;
-                let cell_class = if is_player { "cell player" } else { "cell" };
+                // Wrap signal accesses in closures
+                let is_player = move || player_x.get() == col && player_y.get() == row;
+                let cell_class = move || if is_player() { "cell player" } else { "cell" };
 
                 cells.push(view! {
+                    // Use closures in the view to ensure reactivity
                     <div class=cell_class></div>
                 });
             }
@@ -101,7 +103,8 @@ pub fn GamePage(websocket_service: WebSocketService) -> impl IntoView {
     view! {
         <div node_ref=game_container_ref on:keydown=on_keydown tabindex="0" class="game-container">
             <h2>"Game Page"</h2>
-            <p>{format!("Player position: ({}, {})", player_x.get(), player_y.get())}</p>
+            // Wrap signal accesses in a closure
+            <p>{move || format!("Player position: ({}, {})", player_x.get(), player_y.get())}</p>
             {grid()}
         </div>
     }
