@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+shared = { path = "../shared" }
 leptos = { version = "0.6.15", features = ["csr"] }
 gloo-net = "0.6.0"
 wasm-bindgen-futures = "0.4.45"

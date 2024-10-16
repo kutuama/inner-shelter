@@ -1,0 +1,7 @@
+{
+    "scripts": {
+      "build-client": "trunk build",
+      "serve-client": "trunk serve"
+    }
+  }
+  
