@@ -7,24 +7,24 @@ use std::collections::HashMap;
 use serde::Deserialize;
 
 // Define the grid size at the module level
-const GRID_SIZE: usize = 10;
+const GRID_SIZE: i32 = 10;
 
 #[derive(Clone, Debug, Deserialize)]
 struct PositionUpdate {
     _action: String,
     username: String,
-    x: usize,
-    y: usize,
+    x: i32,
+    y: i32,
 }
 
 #[component]
 pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl IntoView {
     // Create signals for the player's position
-    let player_x = create_rw_signal(1usize);
-    let player_y = create_rw_signal(1usize);
+    let player_x = create_rw_signal(1i32);
+    let player_y = create_rw_signal(1i32);
 
     // Create a signal to track other players' positions
-    let other_players = create_rw_signal(HashMap::<String, (usize, usize)>::new());
+    let other_players = create_rw_signal(HashMap::<String, (i32, i32)>::new());
 
     // Reference to the game container for focusing
     let game_container_ref = create_node_ref::<Div>();
@@ -40,10 +40,12 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
 
     // Handle keydown events to move the player
     let ws_service_clone = websocket_service.clone();
+    let player_x_clone = player_x.clone();
+    let player_y_clone = player_y.clone();
     let on_keydown = move |e: KeyboardEvent| {
         let key = e.key();
         console::log_1(&format!("Key pressed: {}", key).into());
-        let (dx, dy) = match key.as_str() {
+        let (dx, dy): (i32, i32) = match key.as_str() {
             "ArrowUp" => (0, -1),
             "ArrowDown" => (0, 1),
             "ArrowLeft" => (-1, 0),
@@ -52,6 +54,12 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
         };
 
         if dx != 0 || dy != 0 {
+            // Update the player's position immediately
+            let new_x = (player_x_clone.get() + dx).max(1).min(GRID_SIZE);
+            let new_y = (player_y_clone.get() + dy).max(1).min(GRID_SIZE);
+            player_x_clone.set(new_x);
+            player_y_clone.set(new_y);
+
             // Send the movement command to the server
             let message = serde_json::json!({
                 "action": "move",
@@ -80,16 +88,18 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
                     "update_position" => {
                         if let Ok(pos_update) = serde_json::from_value::<PositionUpdate>(value.clone()) {
                             // Check if the update is for the current player or others
-                            if pos_update.username == username_clone {
-                                // Update your own position
-                                player_x_clone.set(pos_update.x);
-                                player_y_clone.set(pos_update.y);
-                            } else {
+                            if pos_update.username != username_clone {
                                 // Update other player's position
                                 other_players_clone.update(|players| {
                                     players.insert(pos_update.username.clone(), (pos_update.x, pos_update.y));
                                 });
+                            } else {
+                                // The server might send corrections; update position if necessary
+                                player_x_clone.set(pos_update.x);
+                                player_y_clone.set(pos_update.y);
                             }
+                        } else {
+                            console::error_1(&"Failed to deserialize PositionUpdate".into());
                         }
                     }
                     _ => {}
@@ -98,44 +108,42 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
         }
     });
 
-    // Generate the grid
-    let grid = move || {
-        let mut rows = vec![];
-
-        for row in 1..=GRID_SIZE {
-            let mut cells = vec![];
-            for col in 1..=GRID_SIZE {
-                let is_player = move || player_x.get() == col && player_y.get() == row;
-                let is_other_player = move || {
-                    other_players.get().values().any(|&(x, y)| x == col && y == row)
-                };
-                let cell_class = move || {
-                    if is_player() {
-                        "cell player"
-                    } else if is_other_player() {
-                        "cell other-player"
-                    } else {
-                        "cell"
-                    }
-                };
-
-                cells.push(view! {
-                    <div class=cell_class></div>
-                });
-            }
-            rows.push(view! {
-                <div class="row">{cells}</div>
-            });
-        }
-
-        view! { <div class="grid">{rows}</div> }
-    };
-
     view! {
         <div node_ref=game_container_ref on:keydown=on_keydown tabindex="0" class="game-container">
             <h2>"Game Page"</h2>
             <p>{move || format!("Player position: ({}, {})", player_x.get(), player_y.get())}</p>
-            {grid()}
+            {move || {
+                let player_x = player_x.get();
+                let player_y = player_y.get();
+                let other_players = other_players.get();
+
+                let mut rows = vec![];
+
+                for row in 1..=GRID_SIZE {
+                    let mut cells = vec![];
+                    for col in 1..=GRID_SIZE {
+                        let is_player = player_x == col && player_y == row;
+                        let is_other_player = other_players.values().any(|&(x, y)| x == col && y == row);
+
+                        let cell_class = if is_player {
+                            "cell player"
+                        } else if is_other_player {
+                            "cell other-player"
+                        } else {
+                            "cell"
+                        };
+
+                        cells.push(view! {
+                            <div class=cell_class></div>
+                        });
+                    }
+                    rows.push(view! {
+                        <div class="row">{cells}</div>
+                    });
+                }
+
+                view! { <div class="grid">{rows}</div> }
+            }}
         </div>
     }
 }
