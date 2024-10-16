@@ -42,6 +42,7 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
     let ws_service_clone = websocket_service.clone();
     let on_keydown = move |e: KeyboardEvent| {
         let key = e.key();
+        console::log_1(&format!("Key pressed: {}", key).into());
         let (dx, dy) = match key.as_str() {
             "ArrowUp" => (0, -1),
             "ArrowDown" => (0, 1),
@@ -69,7 +70,9 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
     let other_players_clone = other_players.clone();
     let username_clone = username.clone();
 
+    // Set the on_message handler only once
     websocket_service.set_on_message(move |message| {
+        console::log_1(&format!("Received message from server: {}", message).into());
         // Parse the message and update the game state
         if let Ok(value) = serde_json::from_str::<Value>(&message) {
             if let Some(action) = value.get("action").and_then(|v| v.as_str()) {
