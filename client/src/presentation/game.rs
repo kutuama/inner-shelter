@@ -3,15 +3,28 @@ use leptos::html::Div;
 use web_sys::{console, KeyboardEvent};
 use crate::application::websocket_service::WebSocketService;
 use serde_json::Value;
+use std::collections::HashMap;
+use serde::Deserialize;
 
 // Define the grid size at the module level
 const GRID_SIZE: usize = 10;
 
+#[derive(Clone, Debug, Deserialize)]
+struct PositionUpdate {
+    _action: String,
+    username: String,
+    x: usize,
+    y: usize,
+}
+
 #[component]
-pub fn GamePage(websocket_service: WebSocketService) -> impl IntoView {
+pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl IntoView {
     // Create signals for the player's position
     let player_x = create_rw_signal(1usize);
     let player_y = create_rw_signal(1usize);
+
+    // Create a signal to track other players' positions
+    let other_players = create_rw_signal(HashMap::<String, (usize, usize)>::new());
 
     // Reference to the game container for focusing
     let game_container_ref = create_node_ref::<Div>();
@@ -51,29 +64,35 @@ pub fn GamePage(websocket_service: WebSocketService) -> impl IntoView {
     };
 
     // Handle incoming messages from the server
-    let ws_service_clone2 = websocket_service.clone();
     let player_x_clone = player_x.clone();
     let player_y_clone = player_y.clone();
+    let other_players_clone = other_players.clone();
+    let username_clone = username.clone();
 
-    create_effect(move |_| {
-        ws_service_clone2.set_on_message(move |message| {
-            // Parse the message and update the game state
-            if let Ok(value) = serde_json::from_str::<Value>(&message) {
-                if let Some(action) = value.get("action").and_then(|v| v.as_str()) {
-                    match action {
-                        "update_position" => {
-                            if let Some(x) = value.get("x").and_then(|v| v.as_u64()) {
-                                player_x_clone.set(x as usize);
-                            }
-                            if let Some(y) = value.get("y").and_then(|v| v.as_u64()) {
-                                player_y_clone.set(y as usize);
+    websocket_service.set_on_message(move |message| {
+        // Parse the message and update the game state
+        if let Ok(value) = serde_json::from_str::<Value>(&message) {
+            if let Some(action) = value.get("action").and_then(|v| v.as_str()) {
+                match action {
+                    "update_position" => {
+                        if let Ok(pos_update) = serde_json::from_value::<PositionUpdate>(value.clone()) {
+                            // Check if the update is for the current player or others
+                            if pos_update.username == username_clone {
+                                // Update your own position
+                                player_x_clone.set(pos_update.x);
+                                player_y_clone.set(pos_update.y);
+                            } else {
+                                // Update other player's position
+                                other_players_clone.update(|players| {
+                                    players.insert(pos_update.username.clone(), (pos_update.x, pos_update.y));
+                                });
                             }
                         }
-                        _ => {}
                     }
+                    _ => {}
                 }
             }
-        });
+        }
     });
 
     // Generate the grid
@@ -83,12 +102,21 @@ pub fn GamePage(websocket_service: WebSocketService) -> impl IntoView {
         for row in 1..=GRID_SIZE {
             let mut cells = vec![];
             for col in 1..=GRID_SIZE {
-                // Wrap signal accesses in closures
                 let is_player = move || player_x.get() == col && player_y.get() == row;
-                let cell_class = move || if is_player() { "cell player" } else { "cell" };
+                let is_other_player = move || {
+                    other_players.get().values().any(|&(x, y)| x == col && y == row)
+                };
+                let cell_class = move || {
+                    if is_player() {
+                        "cell player"
+                    } else if is_other_player() {
+                        "cell other-player"
+                    } else {
+                        "cell"
+                    }
+                };
 
                 cells.push(view! {
-                    // Use closures in the view to ensure reactivity
                     <div class=cell_class></div>
                 });
             }
@@ -103,7 +131,6 @@ pub fn GamePage(websocket_service: WebSocketService) -> impl IntoView {
     view! {
         <div node_ref=game_container_ref on:keydown=on_keydown tabindex="0" class="game-container">
             <h2>"Game Page"</h2>
-            // Wrap signal accesses in a closure
             <p>{move || format!("Player position: ({}, {})", player_x.get(), player_y.get())}</p>
             {grid()}
         </div>

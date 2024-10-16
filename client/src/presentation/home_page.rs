@@ -41,11 +41,6 @@ pub fn HomePage(auth_service: AuthService) -> impl IntoView {
                         console::log_1(&"WebSocket connection opened".into());
                     });
 
-                    ws_service.set_on_message(move |message| {
-                        console::log_1(&format!("Received message: {}", message).into());
-                        // Handle incoming messages (e.g., update game state)
-                    });
-
                     ws_service.set_on_error(move || {
                         console::error_1(&"WebSocket error occurred".into());
                     });
@@ -79,7 +74,7 @@ pub fn HomePage(auth_service: AuthService) -> impl IntoView {
                     view! {
                         <div>
                             <p>{format!("Logged in as {}", user.get().unwrap().username)}</p>
-                            <GamePage websocket_service=ws_service.clone() />
+                            <GamePage websocket_service=ws_service.clone() username=user.get().unwrap().username.clone() />
                         </div>
                     }.into_view()
                 } else {

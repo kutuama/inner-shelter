@@ -5,6 +5,7 @@ use futures_util::StreamExt;
 use crate::config::Config;
 use crate::infrastructure::authentication;
 use redis::AsyncCommands;
+use serde::{Deserialize, Serialize};
 
 pub async fn ws_handler(
     req: HttpRequest,
@@ -15,7 +16,7 @@ pub async fn ws_handler(
     let token = extract_access_token(&req);
 
     // Validate token
-    let _username = if let Some(token) = token {
+    let username = if let Some(token) = token {
         match authentication::validate_jwt(&token, config.jwt_secret.as_bytes()) {
             Ok(claims) => claims.sub,
             Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
@@ -27,7 +28,7 @@ pub async fn ws_handler(
     let (response, session, mut msg_stream) = actix_ws::handle(&req, stream)?;
 
     actix_rt::spawn(async move {
-        if let Err(e) = ws_session(session, &mut msg_stream, config.get_ref().clone()).await {
+        if let Err(e) = ws_session(session, &mut msg_stream, config.get_ref().clone(), username).await {
             eprintln!("WebSocket error: {:?}", e);
         }
     });
@@ -39,10 +40,26 @@ fn extract_access_token(req: &HttpRequest) -> Option<String> {
     req.cookie("access_token").map(|cookie| cookie.value().to_string())
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct MoveCommand {
+    action: String,
+    dx: i32,
+    dy: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct PositionUpdate {
+    action: String,
+    username: String,
+    x: i32,
+    y: i32,
+}
+
 async fn ws_session(
     mut session: Session,
     msg_stream: &mut MessageStream,
     config: Config,
+    username: String,
 ) -> Result<(), Error> {
     // Connect to Redis
     let client = redis::Client::open(config.redis_url.clone()).map_err(|e| {
@@ -50,7 +67,7 @@ async fn ws_session(
         actix_web::error::ErrorInternalServerError(e)
     })?;
 
-    // Connection for publishing
+    // Connection for publishing and data manipulation
     let mut conn = client.get_async_connection().await.map_err(|e| {
         eprintln!("Failed to connect to Redis: {}", e);
         actix_web::error::ErrorInternalServerError(e)
@@ -69,20 +86,86 @@ async fn ws_session(
 
     let mut redis_stream = pubsub_conn.on_message();
 
+    // Initialize player position if not set
+    let key = format!("player:{}", username);
+    let exists: bool = conn.exists(&key).await.map_err(|e| {
+        eprintln!("Failed to check if key exists: {}", e);
+        actix_web::error::ErrorInternalServerError(e)
+    })?;
+
+    let (mut x, mut y): (i32, i32) = if exists {
+        conn.hget(&key, &["x", "y"]).await.map_err(|e| {
+            eprintln!("Failed to get position from Redis: {}", e);
+            actix_web::error::ErrorInternalServerError(e)
+        })?
+    } else {
+        (1, 1)
+    };
+
+    // Notify other clients of the new player
+    let position_update = PositionUpdate {
+        action: "update_position".to_string(),
+        username: username.clone(),
+        x,
+        y,
+    };
+    let message = serde_json::to_string(&position_update).unwrap();
+
+    // Publish to Redis
+    let _: () = conn.publish::<_, _, ()>("game_channel", message.clone()).await.map_err(|e| {
+        eprintln!("Failed to publish to Redis: {}", e);
+        actix_web::error::ErrorInternalServerError(e)
+    })?;
+
+    // Send the initial position to the current client
+    if session.text(message).await.is_err() {
+        // Client disconnected
+        return Ok(());
+    }
+
     loop {
         tokio::select! {
             // Handle messages from the client
             Some(msg) = msg_stream.next() => {
                 match msg {
                     Ok(Message::Text(text)) => {
+                        eprintln!("Received message from client: {}", text);
                         let text = text.to_string();
-                        // Publish the message to Redis
-                        if let Err(e) = conn.publish::<_, _, i32>("game_channel", text).await {
-                            eprintln!("Failed to publish to Redis: {}", e);
-                            break;
+                        // Parse the movement command
+                        if let Ok(move_cmd) = serde_json::from_str::<MoveCommand>(&text) {
+                            eprintln!("Parsed movement command: {:?}", move_cmd);
+                            if move_cmd.action == "move" {
+                                x += move_cmd.dx;
+                                y += move_cmd.dy;
+                                // Ensure the position stays within bounds
+                                x = x.max(1).min(10);
+                                y = y.max(1).min(10);
+
+                                // Update position in Redis
+                                let _: () = conn.hset_multiple(&key, &[("x", x), ("y", y)]).await.map_err(|e| {
+                                    eprintln!("Failed to update position in Redis: {}", e);
+                                    actix_web::error::ErrorInternalServerError(e)
+                                })?;
+
+                                // Publish the updated position to all clients
+                                let position_update = PositionUpdate {
+                                    action: "update_position".to_string(),
+                                    username: username.clone(),
+                                    x,
+                                    y,
+                                };
+                                let message = serde_json::to_string(&position_update).unwrap();
+                                let _: () = conn.publish::<_, _, ()>("game_channel", message).await.map_err(|e| {
+                                    eprintln!("Failed to publish to Redis: {}", e);
+                                    actix_web::error::ErrorInternalServerError(e)
+                                })?;
+                            }
+                        } else {
+                            eprintln!("Failed to parse movement command");
                         }
                     },
                     Ok(Message::Close(_)) => {
+                        // Optionally, remove player from Redis or mark as offline
                         let _ = session.close(None).await;
                         break;
                     },
