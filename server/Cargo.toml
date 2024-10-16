@@ -13,8 +13,6 @@ chrono = "0.4.38"
 futures = "0.3.31"
 actix-cors = "0.7.0"
 bcrypt = "0.15.1"
-redis = { version = "0.27.4", features = ["aio", "tokio-comp"] }
 futures-util = "0.3.31"
 warp = "0.3.7"
-uuid = "1.10.0"
 serde_urlencoded = "0.7.1"
