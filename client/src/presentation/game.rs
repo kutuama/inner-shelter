@@ -11,7 +11,7 @@ const GRID_SIZE: i32 = 10;
 
 #[derive(Clone, Debug, Deserialize)]
 struct PositionUpdate {
-    _action: String,
+    action: String,
     username: String,
     x: i32,
     y: i32,
