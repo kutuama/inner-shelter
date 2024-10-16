@@ -1,5 +1,5 @@
 use actix_web::{post, web, HttpResponse, Responder};
-use crate::domain::auth::RegisterData;
+use shared::api::auth::RegisterData;
 use crate::infrastructure::authentication;
 use crate::domain::user_repository::UserRepository;
 use crate::errors::AppError;
