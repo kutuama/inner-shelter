@@ -5,27 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inner Shelter Client</title>
     <style>
+        :focus {
+            outline: none;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
         .tab-menu {
             margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
         }
-    
         .tab-menu button {
             padding: 10px 20px;
-            margin-right: 10px;
             cursor: pointer;
+            border: none;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            transition: background-color 0.3s;
         }
-    
+        .tab-menu button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .tab-menu button:hover {
+            background-color: #d5d5d5;
+        }
         .tab-content {
-            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+        input {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        button:disabled {
+            background-color: #9E9E9E;
+            cursor: not-allowed;
         }
         .game-container {
-            outline: none; /* Remove outline when focused */
+            text-align: center;
         }
         .grid {
             display: flex;
             flex-direction: column;
             width: 300px;
-            margin: 0 auto;
+            margin: 20px auto;
         }
         .row {
             display: flex;
@@ -34,11 +84,11 @@
             width: 30px;
             height: 30px;
             border: 1px solid #ccc;
+            box-sizing: border-box;
         }
         .cell.player {
-            background-color: #4CAF50; /* Green color for the player */
+            background-color: #4CAF50;
         }
-
     </style>    
 </head>
 <body></body>
