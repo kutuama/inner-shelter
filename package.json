@@ -1,7 +1,8 @@
 {
     "scripts": {
       "dev": "cd client && trunk serve --port 8082",
-      "build": "cd client && trunk build"
+      "build": "cd client && trunk build",
+      "game": "cd gane && trunk serve --port 9000"
     }
   }
   

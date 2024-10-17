@@ -1,0 +1,6 @@
+[build]
+target = "wasm32-unknown-unknown"
+dist = "public"
+
+[serve]
+port = 9000
