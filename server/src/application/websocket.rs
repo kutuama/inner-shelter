@@ -1,5 +1,5 @@
 use actix_web::{HttpRequest, HttpResponse, Error, web};
-use actix_ws::{Message, Session};
+use actix_ws::{Message, Session, MessageStream};
 use futures_util::StreamExt;
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
@@ -24,34 +24,21 @@ pub async fn ws_handler(
         Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
     };
 
-    let (response, mut session, mut msg_stream) = actix_ws::handle(&req, stream)?;
+    let (response, session, msg_stream) = actix_ws::handle(&req, stream)?;
 
     let game_state = game_state.get_ref().clone();
 
     // Spawn a task to handle the websocket connection
     actix_rt::spawn(async move {
-        // Add player to the game state
+        // Add player to the game state with their session
         {
             let mut state = game_state.lock().unwrap();
-            state.add_player(username.clone());
+            state.add_player(username.clone(), session.clone());
         }
 
         // Handle incoming messages
-        while let Some(Ok(msg)) = msg_stream.next().await {
-            match msg {
-                Message::Text(text) => {
-                    // Convert ByteString to String
-                    let text_str = text.to_string();
-
-                    // Process the message
-                    handle_message(&username, text_str, &game_state, &mut session).await;
-                }
-                Message::Close(reason) => {
-                    session.close(reason).await.unwrap();
-                    break;
-                }
-                _ => (),
-            }
+        if let Err(e) = ws_session(username.clone(), game_state.clone(), session, msg_stream).await {
+            log::error!("WebSocket session error: {:?}", e);
         }
 
         // Remove player from the game state when the connection closes
@@ -64,11 +51,37 @@ pub async fn ws_handler(
     Ok(response)
 }
 
+async fn ws_session(
+    username: String,
+    game_state: Arc<Mutex<GameState>>,
+    session: Session,
+    mut msg_stream: MessageStream,
+) -> Result<(), Error> {
+    // Handle incoming messages
+    while let Some(Ok(msg)) = msg_stream.next().await {
+        match msg {
+            Message::Text(text) => {
+                // Convert ByteString to String
+                let text_str = text.to_string();
+
+                // Process the message
+                handle_message(&username, text_str, &game_state).await;
+            }
+            Message::Close(reason) => {
+                session.close(reason).await.unwrap();
+                break;
+            }
+            _ => (),
+        }
+    }
+
+    Ok(())
+}
+
 async fn handle_message(
     username: &str,
     msg: String,
     game_state: &Arc<Mutex<GameState>>,
-    session: &mut Session,
 ) {
     // Process input and update game state
     let input: Value = serde_json::from_str(&msg).unwrap_or_default();
@@ -76,15 +89,17 @@ async fn handle_message(
     {
         let mut state = game_state.lock().unwrap();
         state.process_input(username, input);
-    }
 
-    // Retrieve updated positions
-    let positions_json = {
-        let mut state = game_state.lock().unwrap();
+        // Retrieve updated positions
         let positions = state.get_positions();
-        serde_json::to_string(&positions).unwrap()
-    };
+        let positions_json = serde_json::to_string(&positions).unwrap();
 
-    // Send updated positions back to the client
-    session.text(positions_json).await.unwrap();
+        // Broadcast updated positions to all connected clients
+        for (client_username, client_session) in &mut state.sessions {
+            // Send the positions JSON to each client
+            if let Err(e) = client_session.text(positions_json.clone()).await {
+                log::error!("Error sending message to {}: {:?}", client_username, e);
+            }
+        }
+    }
 }

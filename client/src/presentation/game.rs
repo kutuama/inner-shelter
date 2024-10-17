@@ -2,20 +2,9 @@ use leptos::*;
 use leptos::html::Div;
 use web_sys::{console, KeyboardEvent};
 use crate::application::websocket_service::WebSocketService;
-use serde_json::Value;
 use std::collections::HashMap;
-use serde::Deserialize;
 
-// Define the grid size at the module level
 const GRID_SIZE: i32 = 10;
-
-#[derive(Clone, Debug, Deserialize)]
-struct PositionUpdate {
-    action: String,
-    username: String,
-    x: i32,
-    y: i32,
-}
 
 #[component]
 pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl IntoView {
@@ -40,8 +29,6 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
 
     // Handle keydown events to move the player
     let ws_service_clone = websocket_service.clone();
-    let player_x_clone = player_x.clone();
-    let player_y_clone = player_y.clone();
     let on_keydown = move |e: KeyboardEvent| {
         let key = e.key();
         console::log_1(&format!("Key pressed: {}", key).into());
@@ -54,12 +41,6 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
         };
 
         if dx != 0 || dy != 0 {
-            // Update the player's position immediately
-            let new_x = (player_x_clone.get() + dx).max(1).min(GRID_SIZE);
-            let new_y = (player_y_clone.get() + dy).max(1).min(GRID_SIZE);
-            player_x_clone.set(new_x);
-            player_y_clone.set(new_y);
-
             // Send the movement command to the server
             let message = serde_json::json!({
                 "action": "move",
@@ -78,33 +59,36 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
     let other_players_clone = other_players.clone();
     let username_clone = username.clone();
 
-    // Set the on_message handler only once
+    // Set the on_message handler
     websocket_service.set_on_message(move |message| {
         console::log_1(&format!("Received message from server: {}", message).into());
-        // Parse the message and update the game state
-        if let Ok(value) = serde_json::from_str::<Value>(&message) {
-            if let Some(action) = value.get("action").and_then(|v| v.as_str()) {
-                match action {
-                    "update_position" => {
-                        if let Ok(pos_update) = serde_json::from_value::<PositionUpdate>(value.clone()) {
-                            // Check if the update is for the current player or others
-                            if pos_update.username != username_clone {
-                                // Update other player's position
-                                other_players_clone.update(|players| {
-                                    players.insert(pos_update.username.clone(), (pos_update.x, pos_update.y));
-                                });
-                            } else {
-                                // The server might send corrections; update position if necessary
-                                player_x_clone.set(pos_update.x);
-                                player_y_clone.set(pos_update.y);
-                            }
-                        } else {
-                            console::error_1(&"Failed to deserialize PositionUpdate".into());
-                        }
-                    }
-                    _ => {}
+        // Parse the message and prepare updates
+        if let Ok(positions) = serde_json::from_str::<Vec<(String, i32, i32)>>(&message) {
+            let mut new_other_players = HashMap::new();
+            let mut new_player_x = None;
+            let mut new_player_y = None;
+
+            for (player_username, x, y) in positions {
+                if player_username == username_clone {
+                    new_player_x = Some(x);
+                    new_player_y = Some(y);
+                } else {
+                    new_other_players.insert(player_username, (x, y));
                 }
             }
+
+            // Update player position first
+            if let Some(x) = new_player_x {
+                player_x_clone.set(x);
+            }
+            if let Some(y) = new_player_y {
+                player_y_clone.set(y);
+            }
+
+            // Then update other players
+            other_players_clone.set(new_other_players);
+        } else {
+            console::error_1(&"Failed to parse positions from server".into());
         }
     });
 
@@ -123,7 +107,7 @@ pub fn GamePage(websocket_service: WebSocketService, username: String) -> impl I
                     let mut cells = vec![];
                     for col in 1..=GRID_SIZE {
                         let is_player = player_x == col && player_y == row;
-                        let is_other_player = other_players.values().any(|&(x, y)| x == col && y == row);
+                        let is_other_player = other_players.iter().any(|(_, &(x, y))| x == col && y == row);
 
                         let cell_class = if is_player {
                             "cell player"
