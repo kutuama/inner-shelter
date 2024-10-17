@@ -3,7 +3,7 @@ use actix_cors::Cors;
 use crate::infrastructure::db::get_db_session;
 use crate::infrastructure::repository::{create_user_repository, create_game_repository};
 use crate::application::{login, register};
-use crate::application::game_service::GameService;
+use crate::game::systems::game_service::GameService;
 use crate::config::Config;
 use crate::errors::AppError;
 use crate::presentation::websocket::ws_handler;

@@ -4,7 +4,7 @@ use actix_ws::{Message, MessageStream, Session};
 use futures_util::StreamExt;
 use crate::config::Config;
 use crate::infrastructure::authentication;
-use crate::application::game_service::GameService;
+use crate::game::systems::game_service::GameService;
 use crate::game::entities::MoveCommand;
 use std::sync::Arc;
 
