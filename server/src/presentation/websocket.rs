@@ -5,7 +5,7 @@ use futures_util::StreamExt;
 use crate::config::Config;
 use crate::infrastructure::authentication;
 use crate::application::game_service::GameService;
-use crate::domain::entities::MoveCommand;
+use crate::game::entities::MoveCommand;
 use std::sync::Arc;
 
 pub async fn ws_handler(

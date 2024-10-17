@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use crate::errors::AppError;
-use crate::domain::entities::PositionUpdate;
+use crate::game::entities::PositionUpdate;
 use futures_util::Stream;
 use redis::Msg;
 use std::pin::Pin;

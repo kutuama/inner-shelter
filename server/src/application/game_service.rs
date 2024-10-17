@@ -1,5 +1,5 @@
 use crate::domain::game_repository::GameRepository;
-use crate::domain::entities::{MoveCommand, PositionUpdate};
+use crate::game::entities::{MoveCommand, PositionUpdate};
 use crate::errors::AppError;
 use std::sync::Arc;
 use futures_util::Stream;
