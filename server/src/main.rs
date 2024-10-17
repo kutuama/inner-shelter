@@ -1,25 +1,29 @@
-mod config;
-mod game;
-mod domain;
-mod infrastructure;
+use actix_web::{web, App, HttpServer};
+use actix_web::middleware::Logger;
+
 mod application;
-mod presentation;
-mod errors;
+mod infrastructure;
+mod game;
 
-use std::env;
+use application::websocket::ws_handler;
+use std::sync::{Arc, Mutex};
 
-#[tokio::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Initialize the logger
-    env::set_var("RUST_LOG", "info"); // Set default log level
+    // Initialize logger
     env_logger::init();
 
-    // Start the server and handle potential AppError
-    match presentation::routes::start_server().await {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            log::error!("Server failed to start: {}", e);
-            Err(std::io::Error::new(std::io::ErrorKind::Other, "Server failed to start"))
-        }
-    }
+    // Initialize shared game state
+    let game_state = web::Data::new(Arc::new(Mutex::new(game::GameState::new())));
+
+    HttpServer::new(move || {
+        App::new()
+            .wrap(Logger::default())
+            .app_data(game_state.clone())
+            .wrap(actix_cors::Cors::default().allow_any_origin())
+            .route("/ws", web::get().to(ws_handler))
+    })
+    .bind(("127.0.0.1", 8081))?
+    .run()
+    .await
 }
