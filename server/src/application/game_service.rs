@@ -1,4 +1,4 @@
-use crate::domain::game_repository::GameRepository;
+use crate::game::components::game_repository::GameRepository;
 use crate::game::entities::{MoveCommand, PositionUpdate};
 use crate::errors::AppError;
 use std::sync::Arc;

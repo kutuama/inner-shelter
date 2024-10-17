@@ -2,7 +2,7 @@ use redis::{AsyncCommands, Client, aio::{Connection, PubSub}, RedisError, Msg};
 use crate::config::Config;
 use crate::errors::AppError;
 use crate::game::entities::PositionUpdate;
-use crate::domain::game_repository::GameRepository;
+use crate::game::components::game_repository::GameRepository;
 use async_trait::async_trait;
 use futures_util::{Stream, StreamExt};
 use std::pin::Pin;

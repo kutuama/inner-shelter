@@ -9,7 +9,7 @@ pub fn create_user_repository(session: Arc<Session>) -> Arc<dyn UserRepository> 
     Arc::new(scylla_user_repository::ScyllaUserRepository::new(session))
 }
 
-use crate::domain::game_repository::GameRepository;
+use crate::game::components::game_repository::GameRepository;
 use crate::config::Config;
 use crate::infrastructure::repository::redis_game_repository::RedisGameRepository;
 
