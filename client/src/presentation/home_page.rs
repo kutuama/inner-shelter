@@ -33,7 +33,7 @@ pub fn HomePage(auth_service: AuthService) -> impl IntoView {
             console::log_1(&format!("User token: {:?}", user_data.token).into());
 
             // User is logged in, connect to WebSocket
-            let ws_url = "ws://innershelter.org:8080/ws";
+            let ws_url = "ws://innershelter.org:8081/ws";
             match WebSocketService::connect(ws_url) {
                 Ok(ws_service) => {
                     let ws_clone = ws_service.clone();
