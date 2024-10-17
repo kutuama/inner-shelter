@@ -2,7 +2,19 @@ use bevy::prelude::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Window {
+                    title: "Inner Shelter".to_string(),
+                    canvas: Some("#bevy".to_string()),
+                    fit_canvas_to_parent: true,
+                    prevent_default_event_handling: true,
+                    ..default()
+                }
+                .into(),
+                ..default()
+            })
+        )
         .add_systems(Startup, setup)
         .run();
 }
@@ -33,9 +45,9 @@ fn setup(
 
     // Spawn the first box (Red)
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(Cuboid { half_size: Vec3::splat(1.0) })),
+        mesh: meshes.add(Mesh::from(Cuboid { half_size: Vec3::splat(1.0) })), // Use Cuboid with half_size
         material: materials.add(StandardMaterial {
-            base_color: Color::srgb(0.8, 0.2, 0.2),
+            base_color: Color::srgb(0.8, 0.2, 0.2), // Updated to srgb
             ..default()
         }),
         transform: Transform::from_xyz(-3.0, 1.0, 0.0),
@@ -44,9 +56,9 @@ fn setup(
 
     // Spawn the second box (Green)
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(Cuboid { half_size: Vec3::splat(1.0) })),
+        mesh: meshes.add(Mesh::from(Cuboid { half_size: Vec3::splat(1.0) })), // Use Cuboid with half_size
         material: materials.add(StandardMaterial {
-            base_color: Color::srgb(0.2, 0.8, 0.2),
+            base_color: Color::srgb(0.2, 0.8, 0.2), // Updated to srgb
             ..default()
         }),
         transform: Transform::from_xyz(3.0, 1.0, 0.0),

@@ -1,3 +1,6 @@
 [build]
 dist = "public"  # Output directory (default is 'dist')
 public_url = "/" # Public URL path
+
+[serve]
+port = 8082
